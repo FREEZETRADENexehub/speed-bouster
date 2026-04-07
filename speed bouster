@@ -1,0 +1,202 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local lp = Players.LocalPlayer
+
+--// GUI ROOT
+local gui = Instance.new("ScreenGui")
+gui.Name = "NexeHub_Ultra"
+gui.ResetOnSpawn = false
+gui.Parent = lp:WaitForChild("PlayerGui")
+
+--// MINI BOUTON ROND
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+toggleBtn.Text = "N"
+toggleBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 25
+toggleBtn.Parent = gui
+
+local btnCorner = Instance.new("UICorner", toggleBtn)
+btnCorner.CornerRadius = UDim.new(1, 0)
+
+local btnStroke = Instance.new("UIStroke", toggleBtn)
+btnStroke.Thickness = 2
+btnStroke.Color = Color3.fromRGB(0, 170, 255)
+
+--// CADRE PRINCIPAL
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 250, 0, 320)
+main.Position = UDim2.new(0.5, -125, 0.5, -160)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+main.BorderSizePixel = 0
+main.ClipsDescendants = true
+main.Visible = true
+main.Parent = gui
+
+local corner = Instance.new("UICorner", main)
+corner.CornerRadius = UDim.new(0, 15)
+
+-- Bordure animée (Bleu / Violet)
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 3
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local gradient = Instance.new("UIGradient", stroke)
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 0, 255))
+})
+
+task.spawn(function()
+    while true do
+        gradient.Rotation = gradient.Rotation + 2
+        task.wait(0.02)
+    end
+end)
+
+--// LOGIQUE FLOCONS
+local function spawnFlake()
+    local flake = Instance.new("TextLabel")
+    flake.BackgroundTransparency = 1
+    flake.Text = "❄"
+    flake.TextColor3 = Color3.new(1, 1, 1)
+    flake.TextScaled = true
+    flake.ZIndex = 1
+    local size = math.random(15, 25)
+    flake.Size = UDim2.new(0, size, 0, size)
+    flake.Position = UDim2.new(math.random(), 0, -0.1, 0)
+    flake.Parent = main
+
+    local info = TweenInfo.new(math.random(3, 6), Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(flake, info, {Position = UDim2.new(flake.Position.X.Scale, 0, 1, 0)})
+    tween:Play()
+    tween.Completed:Connect(function() flake:Destroy() end)
+end
+
+task.spawn(function()
+    while true do
+        if main.Visible then spawnFlake() end
+        task.wait(0.5)
+    end
+end)
+
+--// TITRE
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 50)
+title.Text = "Nexe_hub"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+title.BackgroundTransparency = 1
+title.ZIndex = 10
+title.Parent = main
+
+--// BOUTON ACTIVER
+local active = false
+local loop
+local activateBtn = Instance.new("TextButton")
+activateBtn.Size = UDim2.new(0.85, 0, 0, 45)
+activateBtn.Position = UDim2.new(0.075, 0, 0, 60)
+activateBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+activateBtn.Text = "DÉSACTIVÉ"
+activateBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+activateBtn.Font = Enum.Font.GothamBold
+activateBtn.ZIndex = 10
+activateBtn.Parent = main
+Instance.new("UICorner", activateBtn)
+
+--// INPUTS
+local function createInput(name, y, default)
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(0.4, 0, 0, 30)
+    lab.Position = UDim2.new(0.1, 0, 0, y)
+    lab.Text = name
+    lab.TextColor3 = Color3.fromRGB(180, 180, 180)
+    lab.BackgroundTransparency = 1
+    lab.TextXAlignment = "Left"
+    lab.ZIndex = 10
+    lab.Parent = main
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0.35, 0, 0, 30)
+    box.Position = UDim2.new(0.55, 0, 0, y)
+    box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    box.Text = tostring(default)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    box.ZIndex = 10
+    box.Parent = main
+    Instance.new("UICorner", box)
+    return box
+end
+
+local vInput = createInput("Vitesse", 120, 53)
+local sInput = createInput("Voler", 180, 29)
+local jInput = createInput("Saut", 240, 400)
+
+--// LOGIQUE DE TRICHE
+activateBtn.MouseButton1Click:Connect(function()
+    active = not active
+    activateBtn.Text = active and "ACTIVÉ" or "DÉSACTIVÉ"
+    activateBtn.BackgroundColor3 = active and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
+    
+    if active then
+        loop = RunService.Heartbeat:Connect(function()
+            local char = lp.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hum = char:FindFirstChild("Humanoid")
+                local root = char.HumanoidRootPart
+                if hum and hum.MoveDirection.Magnitude > 0 then
+                    local speed = (hum.WalkSpeed < 25) and tonumber(sInput.Text) or tonumber(vInput.Text)
+                    root.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * speed, root.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * speed)
+                end
+            end
+        end)
+    else
+        if loop then loop:Disconnect() end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if active and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        local root = lp.Character.HumanoidRootPart
+        root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, tonumber(jInput.Text) or 400, root.AssemblyLinearVelocity.Z)
+    end
+end)
+
+--// OUVRIR / FERMER
+toggleBtn.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
+--// DRAG
+local function makeDraggable(obj)
+    local dragging, dragStart, startPos
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = obj.Position
+        end
+    end)
+    obj.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    obj.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+makeDraggable(main)
+makeDraggable(toggleBtn)
