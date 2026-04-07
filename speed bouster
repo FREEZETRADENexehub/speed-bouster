@@ -7,9 +7,8 @@ local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
 --// PROTECTION CONTRE LES DOUBLONS
-if lp.PlayerGui:FindFirstChild("NexeHub_Universal") then
-    lp.PlayerGui.NexeHub_Universal:Destroy()
-end
+local oldGui = lp.PlayerGui:FindFirstChild("NexeHub_Universal")
+if oldGui then oldGui:Destroy() end
 
 --// GUI PRINCIPALE
 local gui = Instance.new("ScreenGui")
@@ -17,34 +16,35 @@ gui.Name = "NexeHub_Universal"
 gui.ResetOnSpawn = false
 gui.Parent = lp:WaitForChild("PlayerGui")
 
---// BOUTON FLOTTANT (N)
+--// BOUTON FLOTTANT (N) - Pour ouvrir/fermer
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Size = UDim2.new(0, 55, 0, 55)
 toggleBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 toggleBtn.Text = "N"
 toggleBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
 toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 25
+toggleBtn.TextSize = 28
 toggleBtn.Parent = gui
 
-local bCorner = Instance.new("UICorner", toggleBtn)
-bCorner.CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+local btnStroke = Instance.new("UIStroke", toggleBtn)
+btnStroke.Thickness = 2
+btnStroke.Color = Color3.fromRGB(0, 170, 255)
 
---// LE MENU
+--// LE MENU PRINCIPAL
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 250, 0, 320)
 main.Position = UDim2.new(0.5, -125, 0.5, -160)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 main.BorderSizePixel = 0
 main.ClipsDescendants = true
 main.Visible = true
 main.Parent = gui
 
-local mCorner = Instance.new("UICorner", main)
-mCorner.CornerRadius = UDim.new(0, 15)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 15)
 
--- Bordure colorée (Simple pour Xeno/Delta)
+-- BORDURE ANIMÉE (Arc-en-ciel Bleu/Violet)
 local border = Instance.new("Frame")
 border.Size = UDim2.new(1, 4, 1, 4)
 border.Position = UDim2.new(0, -2, 0, -2)
@@ -53,28 +53,28 @@ border.ZIndex = 0
 border.Parent = main
 Instance.new("UICorner", border).CornerRadius = UDim.new(0, 17)
 
--- Animation de couleur de la bordure
 task.spawn(function()
     while true do
-        for i = 0, 1, 0.01 do
+        for i = 0, 1, 0.005 do
             border.BackgroundColor3 = Color3.fromHSV(i, 0.8, 1)
-            task.wait(0.05)
+            task.wait(0.03)
         end
     end
 end)
 
---// FLOCONS DE NEIGE (TON SYSTÈME)
+--// SYSTÈME DE FLOCONS (❄️)
 local function spawnFlake()
     local flake = Instance.new("TextLabel")
     flake.BackgroundTransparency = 1
     flake.Text = "❄"
     flake.TextColor3 = Color3.new(1, 1, 1)
-    flake.TextSize = math.random(12, 22)
+    flake.TextSize = math.random(14, 22)
     flake.Position = UDim2.new(math.random(), 0, -0.1, 0)
     flake.ZIndex = 1
     flake.Parent = main
     
-    local t = TweenService:Create(flake, TweenInfo.new(math.random(3, 5), Enum.EasingStyle.Linear), {Position = UDim2.new(flake.Position.X.Scale, 0, 1.1, 0)})
+    local fallInfo = TweenInfo.new(math.random(3, 6), Enum.EasingStyle.Linear)
+    local t = TweenService:Create(flake, fallInfo, {Position = UDim2.new(flake.Position.X.Scale, math.random(-20, 20), 1.1, 0)})
     t:Play()
     t.Completed:Connect(function() flake:Destroy() end)
 end
@@ -82,27 +82,27 @@ end
 task.spawn(function()
     while true do
         if main.Visible then spawnFlake() end
-        task.wait(0.6)
+        task.wait(0.5)
     end
 end)
 
---// TITRE
+--// CONTENU DU MENU
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 50)
 title.Text = "Nexe_hub"
 title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 24
+title.TextSize = 25
 title.BackgroundTransparency = 1
 title.ZIndex = 5
 title.Parent = main
 
---// BOUTON ON/OFF
+-- Bouton ACTIVER
 local active = false
 local toggle = Instance.new("TextButton")
 toggle.Size = UDim2.new(0.85, 0, 0, 45)
 toggle.Position = UDim2.new(0.075, 0, 0, 60)
-toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggle.Text = "DÉSACTIVÉ"
 toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
 toggle.Font = Enum.Font.GothamBold
@@ -110,13 +110,14 @@ toggle.ZIndex = 5
 toggle.Parent = main
 Instance.new("UICorner", toggle)
 
---// INPUTS
+-- Champs de saisie (Inputs)
 local function addInput(name, y, def)
     local lab = Instance.new("TextLabel")
     lab.Size = UDim2.new(0.4, 0, 0, 30)
     lab.Position = UDim2.new(0.1, 0, 0, y)
     lab.Text = name
     lab.TextColor3 = Color3.fromRGB(180, 180, 180)
+    lab.Font = Enum.Font.Gotham
     lab.BackgroundTransparency = 1
     lab.TextXAlignment = "Left"
     lab.ZIndex = 5
@@ -125,9 +126,10 @@ local function addInput(name, y, def)
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.35, 0, 0, 30)
     box.Position = UDim2.new(0.55, 0, 0, y)
-    box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     box.Text = tostring(def)
     box.TextColor3 = Color3.new(1, 1, 1)
+    box.Font = Enum.Font.GothamBold
     box.ZIndex = 5
     box.Parent = main
     Instance.new("UICorner", box)
@@ -138,11 +140,12 @@ local vIn = addInput("Vitesse", 120, 53)
 local sIn = addInput("Voler", 180, 29)
 local jIn = addInput("Saut", 240, 400)
 
---// FONCTIONNEMENT
+--// FONCTIONNEMENT DES TRICHES
 toggle.MouseButton1Click:Connect(function()
     active = not active
     toggle.Text = active and "ACTIVÉ" or "DÉSACTIVÉ"
-    toggle.BackgroundColor3 = active and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(40, 40, 40)
+    toggle.BackgroundColor3 = active and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(30, 30, 30)
+    toggle.TextColor3 = active and Color3.new(1,1,1) or Color3.fromRGB(200,200,200)
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -152,7 +155,7 @@ RunService.Heartbeat:Connect(function()
             local hum = char:FindFirstChild("Humanoid")
             local root = char.HumanoidRootPart
             if hum and hum.MoveDirection.Magnitude > 0 then
-                local s = (hum.WalkSpeed < 25) and tonumber(sIn.Text) or tonumber(vIn.Text)
+                local s = (hum.WalkSpeed < 20) and tonumber(sIn.Text) or tonumber(vIn.Text)
                 root.Velocity = Vector3.new(hum.MoveDirection.X * s, root.Velocity.Y, hum.MoveDirection.Z * s)
             end
         end
@@ -166,7 +169,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
---// OUVERTURE & DRAG
+--// OUVERTURE & DRAG (DÉPLACEMENT)
 toggleBtn.MouseButton1Click:Connect(function() main.Visible = not main.Visible end)
 
 local function makeDraggable(obj)
@@ -177,5 +180,6 @@ local function makeDraggable(obj)
     end end)
     obj.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
 end
+
 makeDraggable(main)
 makeDraggable(toggleBtn)
